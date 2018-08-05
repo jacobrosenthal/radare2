@@ -2892,9 +2892,8 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 		r_cons_printf ("=== VS_VERSIONINFO ===\n\n");
 	}
 	bool firstit_dowhile = true;
+	char *path_version = r_str_newf (format_version, num_version);
 	do {
-		char path_version[256] = R_EMPTY;
-		snprintf (path_version, sizeof (path_version), format_version, num_version);
 		if (!(sdb = sdb_ns_path (r->sdb, path_version, 0))) {
 			break;
 		}
@@ -2904,9 +2903,7 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 		} else {
 			r_cons_printf ("# VS_FIXEDFILEINFO\n\n");
 		}
-		char path_fixedfileinfo[256 + 16] = R_EMPTY;
-		snprintf (path_fixedfileinfo, sizeof (path_fixedfileinfo), "%s/fixed_file_info", path_version);
-		if (!(sdb = sdb_ns_path (r->sdb, path_fixedfileinfo, 0))) {
+		if (!(sdb = sdb_ns_path (r->sdb, sdb_fmt ("%s/fixed_file_info", path_version), 0))) {
 			r_cons_printf ("}");
 			break;
 		}
@@ -2989,13 +2986,11 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 			r_cons_printf ("# StringTable\n\n");
 		}
 		for (num_stringtable = 0; sdb; num_stringtable++) {
-			char path_stringtable[256] = R_EMPTY;
-			snprintf (path_stringtable, sizeof (path_stringtable), format_stringtable, path_version, num_stringtable);
+			char *path_stringtable = r_str_newf (format_stringtable, path_version, num_stringtable);
 			sdb = sdb_ns_path (r->sdb, path_stringtable, 0);
 			bool firstit_for = true;
 			for (num_string = 0; sdb; num_string++) {
-				char path_string[256] = R_EMPTY;
-				snprintf (path_string, sizeof (path_string), format_string, path_stringtable, num_string);
+				char *path_string = r_str_newf (format_string, path_stringtable, num_string);
 				sdb = sdb_ns_path (r->sdb, path_string, 0);
 				if (sdb) {
 					if (!firstit_for && IS_MODE_JSON (mode)) { r_cons_printf (","); }
@@ -3005,7 +3000,6 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 					ut8 *val_utf16 = sdb_decode (sdb_const_get (sdb, "value", 0), &lenval);
 					ut8 *key_utf8 = calloc (lenkey * 2, 1);
 					ut8 *val_utf8 = calloc (lenval * 2, 1);
-
 					if (r_str_utf16_to_utf8 (key_utf8, lenkey * 2, key_utf16, lenkey, true) < 0
 						|| r_str_utf16_to_utf8 (val_utf8, lenval * 2, val_utf16, lenval, true) < 0) {
 						eprintf ("Warning: Cannot decode utf16 to utf8\n");
@@ -3025,7 +3019,9 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 					free (val_utf16);
 				}
 				firstit_for = false;
+				free (path_string);
 			}
+			free (path_stringtable);
 		}
 		if (IS_MODE_JSON (mode)) {
 			r_cons_printf ("}}");
@@ -3033,6 +3029,7 @@ static void bin_pe_versioninfo(RCore *r, int mode) {
 		num_version++;
 		firstit_dowhile = false;
 	} while (sdb);
+	free (path_version);
 }
 
 static void bin_elf_versioninfo(RCore *r, int mode) {
@@ -3048,8 +3045,8 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 		r_cons_printf ("{\"versym\":[");
 	}
 	for (;; num_versym++) {
-		snprintf (path, sizeof (path), format, "versym", num_versym);
-		if (!(sdb = sdb_ns_path (r->sdb, path, 0))) {
+		const char *versym_path = sdb_fmt (format, "versym", num_versym);
+		if (!(sdb = sdb_ns_path (r->sdb, versym_path, 0))) {
 			break;
 		}
 		ut64 addr = sdb_num_get (sdb, "addr", 0);
@@ -3072,8 +3069,7 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 		}
 		int i;
 		for (i = 0; i < num_entries; i++) {
-			char key[32] = R_EMPTY;
-			snprintf (key, sizeof (key), "entry%d", i);
+			const char *key = sdb_fmt ("entry%d", i);
 			const char *value = sdb_const_get (sdb, key, 0);
 			if (value) {
 				if (oValue && !strcmp (value, oValue)) {
@@ -3103,9 +3099,8 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 
 	bool firstit_dowhile_verneed = true;
 	do {
-		char path_version[256 + 19] = R_EMPTY;
-		snprintf (path, sizeof (path), format, "verneed", num_verneed++);
-		if (!(sdb = sdb_ns_path (r->sdb, path, 0))) {
+		char *verneed_path = sdb_fmt (format, "verneed", num_verneed++);
+		if (!(sdb = sdb_ns_path (r->sdb, verneed_path, 0))) {
 			break;
 		}
 
@@ -3127,10 +3122,10 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 		}
 		bool firstit_for_verneed = true;
 		for (num_version = 0;; num_version++) {
-			snprintf (path_version, sizeof (path_version), "%s/version%d", path, num_version);
 			const char *filename = NULL;
-			char path_vernaux[256 + 38] = R_EMPTY;
 			int num_vernaux = 0;
+
+			char *path_version = sdb_fmt ("%s/version%d", path, num_version);
 			if (!(sdb = sdb_ns_path (r->sdb, path_version, 0))) {
 				break;
 			}
@@ -3162,8 +3157,7 @@ static void bin_elf_versioninfo(RCore *r, int mode) {
 			}
 			bool firstit_dowhile_vernaux = true;
 			do {
-				snprintf (path_vernaux, sizeof (path_vernaux), "%s/vernaux%d",
-					path_version, num_vernaux++);
+				const char *path_vernaux = sdb_fmt ("%s/vernaux%d", path_version, num_vernaux++);
 				if (!(sdb = sdb_ns_path (r->sdb, path_vernaux, 0))) {
 					break;
 				}
