@@ -1787,7 +1787,7 @@ static void do_syscall_search(RCore *core, struct search_parameters *param) {
 #else
 				int off = syscallNumber;
 #endif
-				RSyscallItem *item = r_syscall_get (core->anal->syscall, off, -1);
+				RSyscallItem *item = r_syscall_get (core->anal->syscall, off, aop.val);
 				if (item) {
 					r_cons_printf ("0x%08"PFMT64x" %s\n", at, item->name);
 				}

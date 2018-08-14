@@ -1409,6 +1409,8 @@ R_API bool r_debug_continue_back(RDebug *dbg) {
 	}
 	return true;
 }
+
+//todo doesnt work for arm thumb
 static int show_syscall(RDebug *dbg, const char *sysreg) {
 	const char *sysname;
 	char regname[8];
@@ -1440,6 +1442,7 @@ static int show_syscall(RDebug *dbg, const char *sysreg) {
 	return reg;
 }
 
+//todo doesnt work for arm thumb because of show_syscall
 R_API int r_debug_continue_syscalls(RDebug *dbg, int *sc, int n_sc) {
 	int i, err, reg, ret = false;
 	if (!dbg || !dbg->h || r_debug_is_dead (dbg)) {

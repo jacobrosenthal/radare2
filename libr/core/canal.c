@@ -4003,7 +4003,6 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 	}
 
 	int opalign = r_anal_archinfo (core->anal, R_ANAL_ARCHINFO_ALIGN);
-	int in = r_syscall_get_swi (core->anal->syscall);
 	const char *sn = r_reg_get_name (core->anal->reg, R_REG_NAME_SN);
 	r_reg_arena_push (core->anal->reg);
 	for (i = 0; i < iend; i++) {
@@ -4036,11 +4035,11 @@ R_API void r_core_anal_esil(RCore *core, const char *str, const char *target) {
 		}
 		switch (op.type) {
 		case R_ANAL_OP_TYPE_SWI:
-			if (!refptr && (in == -1 || op.val == in)) {
+			if (!refptr && op.val > 0) {
 				r_flag_space_set (core->flags, "syscalls");
 				int snv = (int)r_reg_getv (core->anal->reg, sn);
 				if (snv > 0) {
-					RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, in);
+					RSyscallItem *si = r_syscall_get (core->anal->syscall, snv, op.val);
 					if (si) {
 					//	eprintf ("0x%08"PFMT64x" SYSCALL %-4d %s\n", cur, snv, si->name);
 						r_flag_set_next (core->flags, sdb_fmt ("syscall.%s", si->name), cur, 1);

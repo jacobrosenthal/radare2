@@ -468,6 +468,7 @@ static int filter(RParse *p, RFlag *f, char *data, char *str, int len, bool big_
 			case 80:
 				if (p && p->anal && p->anal->syscall) {
 					RSyscallItem *si;
+					//todo
 					si = r_syscall_get (p->anal->syscall, off, -1);
 					if (si) {
 						snprintf (num, sizeof (num), "%s()", si->name);
