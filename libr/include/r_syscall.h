@@ -39,7 +39,6 @@ typedef struct r_syscall_t {
 	char *os;
 	int bits;
 	// database
-	RSyscallRegs *regs;
 	RSyscallItem *sysptr;
 	RSyscallPort *sysport;
 	Sdb *db;
